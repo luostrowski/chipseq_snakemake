@@ -1,5 +1,6 @@
 
 # Snakefile to analyze ATACseq PE data
+# collect_bam_metrics is not working
 
 configfile:"proj_config.yaml"
 #project_id = config["project_id"]
@@ -26,8 +27,8 @@ rule all:
         expand("data/bowtie2/e_proper_pair/{sample}.sorted.noMT.rmDups.mapq30.proper.bam", sample = SAMPLES),
         expand("data/bowtie2/e_proper_pair/{sample}.read_count.txt", sample = SAMPLES),
         expand("data/bowtie2/e_proper_pair/{sample}.sorted.noMT.rmDups.mapq30.proper.bam.bai", sample = SAMPLES),
-        #"data/bowtie2/metrics/bam_metrics.txt",
-        #"data/bowtie2/metrics/dup_metrics.txt",
+        "data/bowtie2/metrics/bam_metrics.txt",
+        "data/bowtie2/metrics/dup_metrics.txt",
         #"data/bowtie2/metrics/summary_metrics.txt",
         expand("data/deeptools/norm_bigwigs/{sample}.SeqDepthNorm.bw", sample = SAMPLES),
         "data/deeptools/results.npz",
@@ -36,7 +37,7 @@ rule all:
         "data/deeptools/tss_heatmap/out_tss_matrix.gz",
         "data/deeptools/tss_heatmap/tss_heatmap.pdf",
         expand("data/macs2/{sample}_peaks.narrowPeak", sample = TREAT_SAMPLES),
-        expand("data/annot_peaks/{sample}.annot.txt", sample = TREAT_SAMPLES)
+        expand("data/annot_peaks/{sample}.annot.txt", sample = TREAT_SAMPLES),
         #expand("data/macs2/q05_output/{sample}.q05_peaks.narrowPeak", sample = SAMPLES)
 
 rule fastqc_raw:

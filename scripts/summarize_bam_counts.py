@@ -48,7 +48,7 @@ for subdir in sorted(os.listdir(in_dir)):
     master_outs.append(list_of_sample_metrics)
 
 # master_outs is a list of lists of tuples
-# master_outs has a length of 5 (5 subdirectories from bowtie2)
+# master_outs has a length of 4 (4 subdirectories from bowtie2 for chipseq filtering)
 # each element of master_outs is a list of length(n), where n is the number of samples
 # each tuple has two elements: sample name and read number
 
@@ -62,10 +62,10 @@ for samp in range(len(master_outs[0])):
             sample_name = master_outs[subdir][samp][0]
             bam_reads = master_outs[subdir][samp][1]
             line_to_print.append(sample_name + '\t' + bam_reads + '\t')
-        if 0 < subdir < 4:
+        if 0 < subdir < 3:
             bam_reads = master_outs[subdir][samp][1]
             line_to_print.append(bam_reads + '\t')
-        if subdir == 4:
+        if subdir == 3:
             bam_reads = master_outs[subdir][samp][1]
             line_to_print.append(bam_reads + '\n')
     for line in line_to_print:

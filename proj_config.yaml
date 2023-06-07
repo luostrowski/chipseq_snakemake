@@ -13,7 +13,7 @@ effective_genome_size:
   2913022398
 
 treat_samples:
-  ['2e6330', '100k330', '100k1115']
+  ['H3K4me3', 'RUNX1']
 
 control_sample:
   "control"
