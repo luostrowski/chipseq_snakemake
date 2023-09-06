@@ -4,10 +4,10 @@ adapters:
   ILLUMINACLIP:NexteraPE-PE.fa:2:30:10:8:true
 
 bt2_genome:
-  /home/groups/hoolock2/u0/genomes/ucsc/hg38/indexes/bowtie2/hg38
+  /home/groups/Agarwal_A_Data/Luiza/chip-seq/genomes/ucsc/hg38/indexes/hg38
 
 gtf:
-  /home/groups/hoolock2/u0/genomes/ucsc/hg38/annotation/hg38.ncbiRefSeq.gtf
+  /home/groups/Agarwal_A_Data/Luiza/chip-seq/genomes/ucsc/hg38/annotation/hg38.ncbiRefSeq.gtf
 
 effective_genome_size:
   2913022398

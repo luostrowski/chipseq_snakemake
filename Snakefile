@@ -1,5 +1,5 @@
 
-# Snakefile to analyze ATACseq PE data
+# Snakefile to analyze ChIP-seq PE data
 # collect_bam_metrics is not working
 
 configfile:"proj_config.yaml"
@@ -13,7 +13,7 @@ TREAT_SAMPLES = config["treat_samples"]
 localrules: collect_bam_metrics
 
 rule all:
-    input:
+    input: 
         expand("data/fastqc/raw/{sample}_{dir}_fastqc.zip", sample = SAMPLES, dir = ["R1", "R2"]),
         expand("data/trimming/{sample}.paired_{dir}.fq.gz", sample = SAMPLES, dir = ["R1", "R2"]),
         expand("data/bowtie2/a_sorted_bams/{sample}.sorted.bam", sample = SAMPLES),
@@ -29,7 +29,7 @@ rule all:
         expand("data/bowtie2/e_proper_pair/{sample}.sorted.noMT.rmDups.mapq30.proper.bam.bai", sample = SAMPLES),
         "data/bowtie2/metrics/bam_metrics.txt",
         "data/bowtie2/metrics/dup_metrics.txt",
-        #"data/bowtie2/metrics/summary_metrics.txt",
+        ##"data/bowtie2/metrics/summary_metrics.txt",
         expand("data/deeptools/norm_bigwigs/{sample}.SeqDepthNorm.bw", sample = SAMPLES),
         "data/deeptools/results.npz",
         "data/deeptools/heatmap_pearson.pdf",
@@ -37,8 +37,8 @@ rule all:
         "data/deeptools/tss_heatmap/out_tss_matrix.gz",
         "data/deeptools/tss_heatmap/tss_heatmap.pdf",
         expand("data/macs2/{sample}_peaks.narrowPeak", sample = TREAT_SAMPLES),
-        expand("data/annot_peaks/{sample}.annot.txt", sample = TREAT_SAMPLES),
-        #expand("data/macs2/q05_output/{sample}.q05_peaks.narrowPeak", sample = SAMPLES)
+        expand("data/annot_peaks/{sample}.annot.txt", sample = TREAT_SAMPLES)
+        ## expand("data/macs2/q05_output/{sample}.q05_peaks.narrowPeak", sample = SAMPLES)
 
 rule fastqc_raw:
     input:
@@ -91,14 +91,13 @@ rule samtools_sort:
         bam_file = "data/bowtie2/a_sorted_bams/{sample}.bam"
     output:
         outfile = "data/bowtie2/a_sorted_bams/{sample}.sorted.bam",
-        count = "data/bowtie2/a_sorted_bams/{sample}.read_count.txt"
+        counts = "data/bowtie2/a_sorted_bams/{sample}.read_count.txt"
     conda:
         "envs/bowtie2.yaml"
     shell:
         """
-        samtools sort -o {output.outfile} {input.bam_file}
-        rm {input.bam_file}
-        samtools view -F 0x4 {output.outfile} | cut -f 1 | sort | uniq | wc -l > {output.count}
+        samtools sort {input.bam_file} -o {output.outfile}
+        samtools view -F 0x4 {output.outfile} | cut -f 1 | sort | uniq | wc -l > {output.counts}
         """
 
 rule samtools_index:
@@ -117,7 +116,7 @@ rule picard_mark_dups:
     output:
         outfile = "data/bowtie2/c_rmDups/{sample}.sorted.noMT.rmDups.bam",
         metrics = "data/bowtie2/c_rmDups/{sample}.dup_metrics.txt",
-        count = "data/bowtie2/c_rmDups/{sample}.read_count.txt"
+        counts = "data/bowtie2/c_rmDups/{sample}.read_count.txt"
     conda:
         "envs/picard.yaml"
     shell:
@@ -129,7 +128,7 @@ rule picard_mark_dups:
             REMOVE_DUPLICATES=true \
             VALIDATION_STRINGENCY=LENIENT \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000
-        samtools view -F 0x4 {output.outfile} | cut -f 1 | sort | uniq | wc -l > {output.count}
+        samtools view -F 0x4 {output.outfile} | cut -f 1 | sort | uniq | wc -l > {output.counts}
         """
 
 rule filter_mapq30:
@@ -137,13 +136,13 @@ rule filter_mapq30:
         bam_file = "data/bowtie2/c_rmDups/{sample}.sorted.noMT.rmDups.bam"
     output:
         outfile = "data/bowtie2/d_mapq30/{sample}.sorted.noMT.rmDups.mapq30.bam",
-        count = "data/bowtie2/d_mapq30/{sample}.read_count.txt"
+        counts = "data/bowtie2/d_mapq30/{sample}.read_count.txt"
     conda:
         "envs/bowtie2.yaml"
     shell:
         """
         samtools view -h -q 30 {input.bam_file} > {output.outfile}
-        samtools view -F 0x4 {output.outfile} | cut -f 1 | sort | uniq | wc -l > {output.count}
+        samtools view -F 0x4 {output.outfile} | cut -f 1 | sort | uniq | wc -l > {output.counts}
         """
 
 rule proper_pairs:
@@ -151,13 +150,13 @@ rule proper_pairs:
         bam_file = "data/bowtie2/d_mapq30/{sample}.sorted.noMT.rmDups.mapq30.bam"
     output:
         outfile = "data/bowtie2/e_proper_pair/{sample}.sorted.noMT.rmDups.mapq30.proper.bam",
-        count = "data/bowtie2/e_proper_pair/{sample}.read_count.txt"
+        counts = "data/bowtie2/e_proper_pair/{sample}.read_count.txt"
     conda:
         "envs/bowtie2.yaml"
     shell:
         """
         samtools view -b -f 0x02 {input.bam_file} > {output.outfile}
-        samtools view -F 0x4 {output.outfile} | cut -f 1 | sort | uniq | wc -l > {output.count}
+        samtools view -F 0x4 {output.outfile} | cut -f 1 | sort | uniq | wc -l > {output.counts}
         """
 
 rule samtools_index_final:
@@ -202,7 +201,9 @@ rule make_coverage_bigwigs:
     params:
         gs = config["effective_genome_size"]
     shell:
-        "bamCoverage --bam {input.bam_file} -o {output.bw_file} --binSize 10 -p 8 --normalizeUsing RPGC --effectiveGenomeSize {params.gs} --extendReads"
+        """
+        bamCoverage --bam {input.bam_file} -o {output.bw_file} --binSize 10 -p 8 --normalizeUsing RPGC --effectiveGenomeSize {params.gs} --extendReads
+       """
 
 rule deeptools_bigwig_summary:
     input:
@@ -264,16 +265,17 @@ rule plot_tss_heatmap:
 
 # rule blacklist regions?
 
-#rule prep_for_macs2:
-#    input:
-#        bam = "data/bowtie2/e_proper_pair/{sample}.sorted.noMT.rmDups.mapq30.proper.bam",
-#    output:
-#        ctrl = "data/bowtie2/e_proper_pair/control_sample/{sample}.sorted.noMT.rmDups.mapq30.proper.bam"
-#    params:
-#        control_name = config["control_sample"]
-#    shell:
-#        "
-#        mv ${params.control_name}* "
+# # rule prep_for_macs2:
+# #    input:
+# #        bam = "data/bowtie2/e_proper_pair/{sample}.sorted.noMT.rmDups.mapq30.proper.bam",
+# #    output:
+# #        ctrl = "data/bowtie2/e_proper_pair/control_sample/{sample}.sorted.noMT.rmDups.mapq30.proper.bam"
+# #    params:
+# #        control_name = config["control_sample"]
+# #    shell:
+# #        """
+# #        mv ${params.control_name}* 
+# #        """
 
 rule macs2_callpeaks:
     input:
@@ -292,13 +294,13 @@ rule macs2_callpeaks:
         macs2 callpeak -t {input.bam} -c {params.control_bam} -g {params.macs2_genome} -f BAMPE --keep-dup all --outdir {params.outdir} -n {params.prefix} -B --SPMR --trackline -q 0.05
         """ 
 
-#rule tmp_macs2:
-#    input:
-#        bam = "data/bowtie2/e_proper_pair/{sample}.sorted.noMT.rmDups.mapq30.proper.bam"
-#    output:
-#        "data/macs2/{sample}_peaks.narrowPeak"
-#    shell:
-#        "touch {input.bam}"
+# #rule tmp_macs2:
+# #    input:
+# #        bam = "data/bowtie2/e_proper_pair/{sample}.sorted.noMT.rmDups.mapq30.proper.bam"
+# #    output:
+# #        "data/macs2/{sample}_peaks.narrowPeak"
+# #    shell:
+# #        "touch {input.bam}"
 
 rule annotate_peaks:
     input:
